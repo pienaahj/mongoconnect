@@ -15,20 +15,21 @@ import (
 var (
 	Database *mongo.Database
 	Client *mongo.Client
-	Collection *mongo.Collection
-
+	Collection *mongo.Collection 
 )
 
 
 
 // ConfigDB populates the database variables by connecting to a
-// mongo database(dbName) and collection(colName)
-func ConfigDB(dbName string, colName string) {
+// mongo database(dbName) and collection(colName)with a 
+// connection string(conStr) format:
+// "mongodb://admin:myadminpassword@192.168.0.148:27017/dbName"
+func ConfigDB(conStr string, dbName string, colName string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	// client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
 	var err error
-	Client, err = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://admin:myadminpassword@192.168.0.148:27017/" + dbName))
+	Client, err = mongo.Connect(ctx, options.Client().ApplyURI(conStr))
 	defer func() {
 		if err = Client.Disconnect(ctx); err != nil {
 			panic(err)
