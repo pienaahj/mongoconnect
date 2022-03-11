@@ -7,7 +7,6 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
@@ -23,33 +22,38 @@ var (
 // ConfigDB populates the database variables by connecting to a
 // mongo database(dbName) and collection(colName)with a 
 // connection string(conStr) format:
-// "mongodb://admin:myadminpassword@192.168.0.148:27017/dbName"
-func ConfigDB(conStr string, dbName string, colName string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	// client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
-	var err error
-	Client, err = mongo.Connect(ctx, options.Client().ApplyURI(conStr))
-	defer func() {
-		if err = Client.Disconnect(ctx); err != nil {
-			panic(err)
-		}
-	}()
+// connectionStringAdmin string = "mongodb://admin:myadminpassword@192.168.0.148:27017"
+// connectionStringUser string = "mongodb://user2:user2password@192.168.0.148:27017/user2?authSource=testdb"
 
-	Database = Client.Database(dbName)
-	Collection = Database.Collection(colName)
-}
+// "mongodb://admin:myadminpassword@192.168.0.148:27017/dbName"
+
+// This needs to be in the main.go file 
+// func ConfigDB(conStr string, dbName string, colName string) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	defer cancel()
+// 	// client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+// 	var err error
+// 	Client, err = mongo.Connect(ctx, options.Client().ApplyURI(conStr))
+// 	defer func() {
+// 		if err = Client.Disconnect(ctx); err != nil {
+// 			panic(err)
+// 		}
+// 	}()
+
+// 	Database = Client.Database(dbName)
+// 	Collection = Database.Collection(colName)
+// }
 
 
 
 // CheckConnection checks server connectivity using the Ping method
 // Calling Connect does not block for server discovery. 
-func CheckConnection(dbs *mongo.Database) bool {
+func CheckConnection(client *mongo.Client) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	err := dbs.Client().Ping(ctx, readpref.Primary())
+	err := client.Ping(ctx, readpref.Primary())
 	if err != nil {
-		fmt.Printf("could not connect to db : %s", dbs.Name())
+		fmt.Println("Could not connect to mongo client")
 		return false
 	}
 	return true
