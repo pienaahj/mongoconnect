@@ -91,13 +91,13 @@ func CreateEntry(dbs *mongo.Database, collection string, doc bson.D) (interface{
 // SingleItem returns a single item from the database
 // For methods that return a single item, a SingleResult, which works like a *sql.Row:
 // filter := bson.D{{"name", "pi"}}
-func SingleItem(filter bson.D) (bson.D, error) {
+func SingleItem(collection *mongo.Collection, filter bson.D) (bson.D, error) {
 	// reserve momory for result
 	var result bson.D
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err := Collection.FindOne(ctx, filter).Decode(&result)
+	err := collection.FindOne(ctx, filter).Decode(&result)
 	if err == mongo.ErrNoDocuments {
 		// Do something when no record was found
 		fmt.Println("record does not exist")
