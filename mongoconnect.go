@@ -111,7 +111,7 @@ func SingleItem(filter bson.D) (bson.D, error) {
 }
 
 // AllItems retrieves all items in a collection
-func AllItems(dbs *mongo.Database, colName string) ([]bson.D, error) {
+func AllItems(dbs *mongo.Database, colName string) ([]bson.M, error) {
 	// reserve momory for result
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -120,7 +120,7 @@ func AllItems(dbs *mongo.Database, colName string) ([]bson.D, error) {
 		return nil, fmt.Errorf("an error:%q occured while finding all items", err)
 	}
 	defer cur.Close(ctx)
-	var results []bson.D
+	var results []bson.M
 
 	// To decode into result, use cursor.All()
 	err = cur.All(ctx, &results)
