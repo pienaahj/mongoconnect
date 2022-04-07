@@ -84,7 +84,7 @@ func CreateEntry(dbs *mongo.Database, collection string, doc bson.D) (interface{
 	return id, nil
 }
 
-//  CreateEntries adds a records(docs) to the database(dbs) into Collection(collection)
+//  CreateEntries adds records(docs) to the database(dbs) into Collection(collection) returns the id's created and possible error
 func CreateEntries(dbs *mongo.Database, collection string, docs []interface{}) ([]interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
