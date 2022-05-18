@@ -53,8 +53,22 @@ var (
 // 	Database = Client.Database(dbName)
 // 	Collection = Database.Collection(colName)
 // }
+// or move the context to your main function.
 
+// create  a create interface for abstraction
+type DBCreate interface{
+	CreateEntry(dbs *mongo.Database, collection string, doc bson.D) (interface{}, error)
+	CreateEntries(dbs *mongo.Database, collection string, docs []interface{}) ([]interface{}, error)
 
+}
+
+// create  a interaction interface for abstraction
+type DBInteract interface{
+	SingleItem(collection *mongo.Collection, filter bson.D) (bson.D, error)
+	AllItems(collection *mongo.Collection) ([]bson.M, error)
+	RemoveOne(collection *mongo.Collection, filter interface{}) (*mongo.DeleteResult, error)
+	RemoveMany(collection *mongo.Collection, filter interface{}) (*mongo.DeleteResult, error)
+}
 
 // CheckConnection checks server connectivity using the Ping method
 // Calling Connect does not block for server discovery. 
@@ -70,7 +84,7 @@ func CheckConnection(client *mongo.Client) bool {
 }
 
 //  CreateEntry adds a record(doc) to the database(dbs) into Collection(collection)
-func CreateEntry(dbs *mongo.Database, collection string, doc bson.D) (interface{}, error) {
+func CreateEntry(dbs *mongo.Database, collection string, doc bson.D) (interface{}, error)  {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	// get the database name
@@ -104,7 +118,7 @@ func CreateEntries(dbs *mongo.Database, collection string, docs []interface{}) (
 // For methods that return a single item, a SingleResult, which works like a *sql.Row:
 // filter := bson.D{{"name", "pi"}}
 func SingleItem(collection *mongo.Collection, filter bson.D) (bson.D, error) {
-	// reserve momory for result
+	// reserve memory for result
 	var result bson.D
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -123,11 +137,11 @@ func SingleItem(collection *mongo.Collection, filter bson.D) (bson.D, error) {
 }
 
 // AllItems retrieves all items in a collection
-func AllItems(dbs *mongo.Database, colName string) ([]bson.M, error) {
+func AllItems(collection *mongo.Collection) ([]bson.M, error) {
 	// reserve momory for result
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	cur, err := dbs.Collection(colName).Find(ctx, bson.D{{}})
+	cur, err := collection.Find(ctx, bson.D{{}})
 	if err != nil { 
 		return nil, fmt.Errorf("an error:%q occured while finding all items", err)
 	}
