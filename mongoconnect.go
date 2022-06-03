@@ -66,6 +66,7 @@ type DBCreate interface{
 type DBInteract interface{
 	SingleItem(collection *mongo.Collection, filter bson.D) (bson.D, error)
 	AllItems(collection *mongo.Collection) ([]bson.M, error)
+	FindManyItems(collection *mongo.Collection, filter interface{}) ([]bson.M, error)
 	RemoveOne(collection *mongo.Collection, filter interface{}) (*mongo.DeleteResult, error)
 	RemoveMany(collection *mongo.Collection, filter interface{}) (*mongo.DeleteResult, error)
 }
@@ -164,6 +165,40 @@ func AllItems(collection *mongo.Collection) ([]bson.M, error) {
 	return results, nil
 }
 
+// FingManyItems retrieves more than one items in a collection with filter
+// in the form of bson.D, bson.M, bson.A
+func FindManyItems(collection *mongo.Collection, filter interface{}) ([]bson.M, error) {
+	// reserve momory for result
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cur, err := collection.Find(ctx, filter)
+	if err != nil { 
+		return nil, fmt.Errorf("an error:%q occured while finding all items", err)
+	}
+	defer cur.Close(ctx)
+	var results []bson.M
+	
+	// To decode into a result, use cursor.Next()
+	for cur.Next(context.TODO()) {
+		var interimResult bson.M
+		err = cur.Decode(&interimResult)
+		if err != nil {
+			return nil, fmt.Errorf("an error:%q occured while decoding all items", err)
+		}
+		// add to the results slice
+		results = append(results, interimResult)
+	}
+	
+	// To get the raw bson bytes use cursor.Current
+	// raw := cur.Current
+	// do something with raw...
+	
+	if err := cur.Err(); err != nil {
+		return nil, fmt.Errorf("an error:%q occured on cursor", err)
+	}
+	return results, nil
+}
+
 // RemoveOne deletes a record from a collection
 func RemoveOne(collection *mongo.Collection, filter interface{}) (*mongo.DeleteResult, error) {
 	// create an expiring context
@@ -182,7 +217,8 @@ func RemoveOne(collection *mongo.Collection, filter interface{}) (*mongo.DeleteR
 	return res, nil
 }
 
-// RemoveMany deletes multiple record from a collection
+// RemoveMany deletes multiple record from a collection filter is in the form
+// bson.D, bson.M, bson.A
 func RemoveMany(collection *mongo.Collection, filter interface{}) (*mongo.DeleteResult, error) {
 	// create an expiring context
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
