@@ -14,13 +14,13 @@ import (
 
 // declare variables
 var (
-	Database *mongo.Database
-	Client *mongo.Client
-	Collection *mongo.Collection 
+	Database   *mongo.Database
+	Client     *mongo.Client
+	Collection *mongo.Collection
 )
 
 // Notes:
-// To insert a document into a collection, first retrieve a Database and then 
+// To insert a document into a collection, first retrieve a Database and then
 // Collection instance from the Client:
 // collection := client.Database("testdb").Collection("numbers")
 // The Collection instance can then be used to insert documents:
@@ -30,7 +30,7 @@ var (
 // id := res.InsertedID
 
 // ConfigDB populates the database variables by connecting to a
-// mongo database(dbName) and collection(colName)with a 
+// mongo database(dbName) and collection(colName)with a
 // connection string(conStr) format:
 // connectionStringAdmin string = "mongodb://admin:myadminpassword@192.168.0.148:27017"
 // connectionStringUser string = "mongodb://user2:user2password@192.168.0.148:27017/user2?authSource=testdb"
@@ -56,14 +56,13 @@ var (
 // or move the context to your main function.
 
 // create  a create interface for abstraction
-type DBCreate interface{
+type DBCreate interface {
 	CreateEntry(dbs *mongo.Database, collection string, doc bson.D) (interface{}, error)
 	CreateEntries(dbs *mongo.Database, collection string, docs []interface{}) ([]interface{}, error)
-
 }
 
 // create  a interaction interface for abstraction
-type DBInteract interface{
+type DBInteract interface {
 	SingleItem(collection *mongo.Collection, filter bson.D) (bson.D, error)
 	AllItems(collection *mongo.Collection) ([]bson.M, error)
 	FindManyItems(collection *mongo.Collection, filter interface{}) ([]bson.M, error)
@@ -72,7 +71,7 @@ type DBInteract interface{
 }
 
 // CheckConnection checks server connectivity using the Ping method
-// Calling Connect does not block for server discovery. 
+// Calling Connect does not block for server discovery.
 func CheckConnection(client *mongo.Client) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -85,32 +84,30 @@ func CheckConnection(client *mongo.Client) bool {
 }
 
 //  CreateEntry adds a record(doc) to the database(dbs) into Collection(collection)
-func CreateEntry(dbs *mongo.Database, collection string, doc bson.D) (interface{}, error)  {
+func CreateEntry(collection *mongo.Collection, doc bson.D) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	// get the database name
-	dbName := dbs.Name()
+
 	// res, err := collection.InsertOne(ctx, bson.D{{"name", "pi"}, {"value", 3.14159}})
-	res, err := dbs.Collection(collection).InsertOne(ctx, doc)
+	res, err := collection.InsertOne(ctx, doc)
 	id := res.InsertedID
 	if err != nil {
-		return nil, fmt.Errorf("could not create record into : %s with error: %q",dbName, err)
+		return nil, fmt.Errorf("could not create record into : %s with error: %q", collection.Name(), err)
 	}
 	return id, nil
 }
 
 //  CreateEntries adds records(docs) to the database(dbs) into Collection(collection) returns the id's created and possible error
-func CreateEntries(dbs *mongo.Database, collection string, docs []interface{}) ([]interface{}, error) {
+func CreateEntries(collection *mongo.Collection, docs []interface{}) ([]interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	// get the database name
-	dbName := dbs.Name()
+
 	// Set the order option to false to allow operations to happen even if one of them errors
 	opts := options.InsertMany().SetOrdered(false)
-	res, err := dbs.Collection(collection).InsertMany(ctx, docs, opts)
+	res, err := collection.InsertMany(ctx, docs, opts)
 	ids := res.InsertedIDs
 	if err != nil {
-		return nil, fmt.Errorf("could not create record into : %s with error: %q",dbName, err)
+		return nil, fmt.Errorf("could not create record into : %s with error: %q", collection.Name(), err)
 	}
 	return ids, nil
 }
@@ -143,7 +140,7 @@ func AllItems(collection *mongo.Collection) ([]bson.M, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	cur, err := collection.Find(ctx, bson.D{{}})
-	if err != nil { 
+	if err != nil {
 		return nil, fmt.Errorf("an error:%q occured while finding all items", err)
 	}
 	defer cur.Close(ctx)
@@ -158,7 +155,7 @@ func AllItems(collection *mongo.Collection) ([]bson.M, error) {
 	// To get the raw bson bytes use cursor.Current
 	// raw := cur.Current
 	// do something with raw...
-	
+
 	if err := cur.Err(); err != nil {
 		return nil, fmt.Errorf("an error:%q occured on cursor", err)
 	}
@@ -172,12 +169,12 @@ func FindManyItems(collection *mongo.Collection, filter interface{}) ([]bson.M, 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	cur, err := collection.Find(ctx, filter)
-	if err != nil { 
+	if err != nil {
 		return nil, fmt.Errorf("an error:%q occured while finding all items", err)
 	}
 	defer cur.Close(ctx)
 	var results []bson.M
-	
+
 	// To decode into a result, use cursor.Next()
 	for cur.Next(context.TODO()) {
 		var interimResult bson.M
@@ -188,11 +185,11 @@ func FindManyItems(collection *mongo.Collection, filter interface{}) ([]bson.M, 
 		// add to the results slice
 		results = append(results, interimResult)
 	}
-	
+
 	// To get the raw bson bytes use cursor.Current
 	// raw := cur.Current
 	// do something with raw...
-	
+
 	if err := cur.Err(); err != nil {
 		return nil, fmt.Errorf("an error:%q occured on cursor", err)
 	}
@@ -206,8 +203,8 @@ func RemoveOne(collection *mongo.Collection, filter interface{}) (*mongo.DeleteR
 	defer cancel()
 	// set options to eliminate case sensitivity ie."name" filed is "Bob" or "bob"
 	opts := options.Delete().SetCollation(&options.Collation{
-		Locale: "en_US",
-		Strength: 1,
+		Locale:    "en_US",
+		Strength:  1,
 		CaseLevel: false,
 	})
 	res, err := collection.DeleteOne(ctx, filter, opts)
@@ -225,8 +222,8 @@ func RemoveMany(collection *mongo.Collection, filter interface{}) (*mongo.Delete
 	defer cancel()
 	// set options to eliminate case sensitivity ie."name" filed is "Bob" or "bob"
 	opts := options.Delete().SetCollation(&options.Collation{
-		Locale: "en_US",
-		Strength: 1,
+		Locale:    "en_US",
+		Strength:  1,
 		CaseLevel: false,
 	})
 	res, err := collection.DeleteMany(ctx, filter, opts)
