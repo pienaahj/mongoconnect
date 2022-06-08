@@ -90,10 +90,10 @@ func CreateEntry(collection *mongo.Collection, doc bson.D) (interface{}, error) 
 
 	// res, err := collection.InsertOne(ctx, bson.D{{"name", "pi"}, {"value", 3.14159}})
 	res, err := collection.InsertOne(ctx, doc)
-	id := res.InsertedID
 	if err != nil {
 		return nil, fmt.Errorf("could not create record into : %s with error: %q", collection.Name(), err)
 	}
+	id := res.InsertedID
 	return id, nil
 }
 
@@ -216,7 +216,7 @@ func RemoveOne(collection *mongo.Collection, filter interface{}) (*mongo.DeleteR
 
 // RemoveMany deletes multiple record from a collection filter is in the form
 // bson.D, bson.M, bson.A
-func RemoveMany(collection *mongo.Collection, filter interface{}) (*mongo.DeleteResult, error) {
+func RemoveMany(collection *mongo.Collection, filter []interface{}) (*mongo.DeleteResult, error) {
 	// create an expiring context
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -226,9 +226,13 @@ func RemoveMany(collection *mongo.Collection, filter interface{}) (*mongo.Delete
 		Strength:  1,
 		CaseLevel: false,
 	})
+	filterBSON := []bson.D{}
+	for _, doc := range filter {
+		filterBSON = append(filterBSON, doc.(bson.D))
+	}
 	res, err := collection.DeleteMany(ctx, filter, opts)
 	if err != nil {
-		return nil, errors.New("could not delete record from mongodb ")
+		return nil, fmt.Errorf("could not delete record from mongodb with error: %v", err)
 	}
 	return res, nil
 }
