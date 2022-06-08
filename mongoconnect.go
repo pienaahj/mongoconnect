@@ -216,7 +216,7 @@ func RemoveOne(collection *mongo.Collection, filter interface{}) (*mongo.DeleteR
 
 // RemoveMany deletes multiple record from a collection filter is in the form
 // bson.D, bson.M, bson.A
-func RemoveMany(collection *mongo.Collection, filter []interface{}) (*mongo.DeleteResult, error) {
+func RemoveMany(collection *mongo.Collection, filter interface{}) (*mongo.DeleteResult, error) {
 	// create an expiring context
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -226,11 +226,9 @@ func RemoveMany(collection *mongo.Collection, filter []interface{}) (*mongo.Dele
 		Strength:  1,
 		CaseLevel: false,
 	})
-	filterBSON := []bson.D{}
-	for _, doc := range filter {
-		filterBSON = append(filterBSON, doc.(bson.D))
-	}
-	res, err := collection.DeleteMany(ctx, filter, opts)
+	filterBSON := filter.(bson.D)
+
+	res, err := collection.DeleteMany(ctx, filterBSON, opts)
 	if err != nil {
 		return nil, fmt.Errorf("could not delete record from mongodb with error: %v", err)
 	}

@@ -127,12 +127,9 @@ func TestRemoveMany(t *testing.T) {
 
 	mt.Run("success", func(mt *mtest.T) {
 		mc.Collection = mt.Coll
-		mt.AddMockResponses(bson.D{{"ok", 2}, {"acknowledged", true}, {"n", 2}})
+		mt.AddMockResponses(bson.D{{"ok", 1}, {"acknowledged", true}, {"n", 1}})
 
-		filter := []interface{}{
-			bson.D{{"name", "john"}},
-			bson.D{{"name", "peter"}},
-		}
+		filter := interface{}(bson.D{{"name", "john"}})
 		_, err := mc.RemoveMany(mc.Collection, filter)
 		fmt.Printf("%v\n", err)
 		assert.Nil(t, err)
@@ -142,10 +139,7 @@ func TestRemoveMany(t *testing.T) {
 	mt.Run("no document deleted", func(mt *mtest.T) {
 		mc.Collection = mt.Coll
 		mt.AddMockResponses(bson.D{{"ok", 0}, {"acknowledged", true}, {"n", 0}})
-		filter := []interface{}{
-			bson.D{{"name", "john"}},
-			bson.D{{"name", "peter"}},
-		}
+		filter := interface{}(bson.D{{"name", "john"}})
 		_, err := mc.RemoveMany(mc.Collection, filter)
 		assert.NotNil(t, err)
 
