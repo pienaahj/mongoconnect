@@ -14,6 +14,23 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
+// Test the connection to MongoDB
+func TestCheckConnection(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	defer mt.Close()
+
+	mt.Run("success", func(mt *mtest.T) {
+		mc.Collection = mt.Coll
+		// create a mock client
+		client := mt.Client
+
+		mt.AddMockResponses(bson.D{{"ok", 1}, {"acknowledged", true}, {"n", 1}})
+
+		res := mc.CheckConnection(client)
+		assert.True(t, res)
+	})
+}
+
 func TestSingleItem(t *testing.T) {
 	//  create a test object
 	object := bson.D{

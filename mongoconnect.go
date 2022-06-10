@@ -55,13 +55,13 @@ var (
 // }
 // or move the context to your main function.
 
-// create  a create interface for abstraction
+// create an interface for abstracting document creation
 type DBCreate interface {
 	CreateEntry(dbs *mongo.Database, collection string, doc bson.D) (interface{}, error)
 	CreateEntries(dbs *mongo.Database, collection string, docs []interface{}) ([]interface{}, error)
 }
 
-// create  a interaction interface for abstraction
+// create  an interaction interface for abstraction
 type DBInteract interface {
 	SingleItem(collection *mongo.Collection, filter bson.D) (bson.D, error)
 	AllItems(collection *mongo.Collection) ([]bson.M, error)
