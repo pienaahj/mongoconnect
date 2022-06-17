@@ -10,7 +10,7 @@ import (
 
 	"testing"
 
-	mc "github.com/pienaahj/mongoconnect"
+	mc "github.com/pienaahj/mongoconnect/v3"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
